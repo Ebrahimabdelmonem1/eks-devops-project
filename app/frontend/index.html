@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps Platform</title>
+</head>
+<body>
+  <h1>DevOps Platform</h1>
+
+  <p>Running with Docker + Kubernetes + AWS</p>
+
+  <h2>Tasks</h2>
+
+  <form id="task-form">
+    <input
+      id="task-title"
+      type="text"
+      placeholder="Enter a task"
+      required
+    />
+    <button type="submit">Add Task</button>
+  </form>
+
+  <ul id="tasks"></ul>
+
+  <script>
+    async function loadTasks() {
+      const response = await fetch("/api/tasks");
+      const tasks = await response.json();
+
+      const list = document.getElementById("tasks");
+      list.innerHTML = "";
+
+      tasks.forEach(task => {
+        const item = document.createElement("li");
+        item.textContent = `${task.title} - ${task.completed ? "Completed" : "Pending"}`;
+        list.appendChild(item);
+      });
+    }
+
+    document
+      .getElementById("task-form")
+      .addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const input = document.getElementById("task-title");
+
+        await fetch("/api/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: input.value
+          })
+        });
+
+        input.value = "";
+        loadTasks();
+      });
+
+    loadTasks();
+  </script>
+</body>
+</html>

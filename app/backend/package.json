@@ -1,0 +1,14 @@
+{
+  "name": "devops-platform-backend",
+  "version": "1.0.0",
+  "description": "Backend API for the EKS DevOps Platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}

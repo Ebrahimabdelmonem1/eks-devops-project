@@ -1,0 +1,48 @@
+replicaCount:
+  backend: 2
+  frontend: 2
+
+images:
+  backend:
+    repository: 942852434159.dkr.ecr.us-east-1.amazonaws.com/devops-platform-backend
+    tag: "1.0.1"
+    pullPolicy: IfNotPresent
+
+  frontend:
+    repository: 942852434159.dkr.ecr.us-east-1.amazonaws.com/devops-platform-frontend
+    tag: "1.0.1"
+    pullPolicy: IfNotPresent
+
+backend:
+  service:
+    type: ClusterIP
+    port: 3000
+
+frontend:
+  service:
+    type: ClusterIP
+    port: 80
+
+database:
+  host: devops-platform-postgres.c25qa0gugmze.us-east-1.rds.amazonaws.com
+  port: 5432
+  name: devops
+  user: devops
+  password: ""
+
+resources:
+  backend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  frontend:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
