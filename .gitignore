@@ -21,3 +21,6 @@ terraform.tfvars
 # OS / editors
 .DS_Store
 .vscode/
+
+# Node.js
+node_modules/
