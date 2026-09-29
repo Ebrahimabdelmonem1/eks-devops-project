@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -7,6 +7,15 @@ on:
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 942852434159.dkr.ecr.us-east-1.amazonaws.com
+  EKS_CLUSTER: devops-platform-eks
 
 jobs:
   test:
@@ -31,3 +40,66 @@ jobs:
       - name: Run tests
         working-directory: app/backend
         run: npm test
+
+  build-and-deploy:
+    name: Build Push and Deploy
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::942852434159:role/GitHubActionsDevOpsPlatformRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/devops-platform-backend:${{ github.sha }} \
+            ./app/backend
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/devops-platform-frontend:${{ github.sha }} \
+            ./app/frontend
+
+      - name: Push backend image
+        run: |
+          docker push \
+            $ECR_REGISTRY/devops-platform-backend:${{ github.sha }}
+
+      - name: Push frontend image
+        run: |
+          docker push \
+            $ECR_REGISTRY/devops-platform-frontend:${{ github.sha }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $EKS_CLUSTER
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install devops-platform \
+            ./helm/devops-platform \
+            --namespace default \
+            --wait \
+            --timeout 5m \
+            --set images.backend.tag=${{ github.sha }} \
+            --set images.frontend.tag=${{ github.sha }}
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/devops-platform-backend --timeout=180s
+          kubectl rollout status deployment/devops-platform-frontend --timeout=180s
+          kubectl get pods
